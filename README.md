@@ -102,3 +102,22 @@ DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent = nullptr)
 - 直接体绘制（截面+预积分传输函数+Blinn-Phong）
 
 ![](./gallery/dvr_slicing_preIntTF_BlinnPhong.png)
+
+## 编码规范
+
+- 代码格式由`.clangformat`自动控制。使用Visual Sutiod的情况下，建议安装`Format on Svae`扩展，并将编码格式设置为`UTF8 with BOM`，以在国产环境下正确浏览注释。
+- C++规范
+  - 标准为C++ 11，已在`CMake`中约束
+  - 类`public`属性和函数采用大写开头的驼峰命名
+  - 类`protected`、`private`属性和函数采用小写开头的驼峰命名
+  - 头文件包含采用`ifndef`法，不采用`#pragma once`法
+    - 头文件标识宏应与所在相对路径统一。如`vis4earth/scalar_viser/heatmap.h`对应下段代码
+  - `lambda`函数需要指定返回值，否则在国产环境下可能无法由编译器自动推导出来
+
+```cpp
+#ifndef VIS4EARTH_SCALAR_VISER_HEATMAP_H
+
+auto lambda = []() -> RetType {
+  // ...
+};
+```
