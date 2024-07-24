@@ -6,12 +6,14 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/execution-charset:utf-8>")
+# add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 # <dep: Qt>
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# find_package("Qt5" COMPONENTS "Core" "Widgets" "Gui" "Charts" REQUIRED)
 find_package("Qt5" COMPONENTS "Core" "Widgets" "Gui" "Charts" REQUIRED)
 # </dep: Qt>
 
@@ -91,7 +93,7 @@ target_link_libraries(
 # <app>
 set(DATA_PATH_PREFIX "<NOT-FOUND>" CACHE PATH "Prefix of data path")
 if (${DATA_PATH_PREFIX} STREQUAL "<NOT-FOUND>")
-	message(FATAL_ERROR "DATA_PATH_PREFIX NOT set!")
+ 	message(FATAL_ERROR "DATA_PATH_PREFIX NOT set!")
 endif()
 add_compile_definitions(
 	DATA_PATH_PREFIX="${DATA_PATH_PREFIX}/"
@@ -119,3 +121,4 @@ foreach(APP_PATH ${APP_PATHS})
 	)
 endforeach()
 # </app>
+

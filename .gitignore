@@ -1,9 +1,0 @@
-# CMake
-out/
-
-# VS
-CMakeSettings.json
-.vs/
-
-# generated
-bin/

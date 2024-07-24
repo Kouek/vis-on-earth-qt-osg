@@ -47,11 +47,11 @@ struct Hit {
     float tExit;
 };
 /*
- * º¯Êý: intersectSphere
- * ¹¦ÄÜ: ·µ»ØÊÓÏßÓëÇòÏà½»µÄÎ»ÖÃ
- * ²ÎÊý:
- * -- d: ÊÓµã³ö·¢µÄ·½Ïò
- * -- r: Çò°ë¾¶
+ * ï¿½ï¿½ï¿½ï¿½: intersectSphere
+ * ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à½»ï¿½ï¿½Î»ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½:
+ * -- d: ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½
+ * -- r: ï¿½ï¿½ë¾¶
  */
 Hit intersectSphere(vec3 d, float r) {
     Hit hit = Hit(0, 0.f, 0.f);
@@ -76,8 +76,8 @@ struct SliceOnSphere {
     vec3 dir;
 };
 /*
- * º¯Êý: computeSliceOnSphere
- * ¹¦ÄÜ: ·µ»ØµØÇò¿Õ¼äÖÐµÄÇÐÃæ
+ * ï¿½ï¿½ï¿½ï¿½: computeSliceOnSphere
+ * ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½Õ¼ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½
  */
 SliceOnSphere computeSliceOnSphere() {
     SliceOnSphere ret;
@@ -119,11 +119,11 @@ vec3 computeShading(vec3 tfCol, vec3 d, vec3 pos, vec3 samplePos, vec3 dSamplePo
 }
 
 /*
- * º¯Êý: intersectSlice
- * ¹¦ÄÜ: ·µ»ØÊÓÏßÓëÇÐÃæÏà½»µÄÎ»ÖÃ
- * ²ÎÊý:
- * -- e2pDir: ÊÓµãÖ¸ÏòpµÄ·½Ïò
- * -- slice: µØÇò¿Õ¼äÖÐµÄÇÐÃæ
+ * ï¿½ï¿½ï¿½ï¿½: intersectSlice
+ * ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à½»ï¿½ï¿½Î»ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½:
+ * -- e2pDir: ï¿½Óµï¿½Ö¸ï¿½ï¿½pï¿½Ä·ï¿½ï¿½ï¿½
+ * -- slice: ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½
  */
 Hit intersectSlice(vec3 e2pDir, SliceOnSphere slice) {
     Hit hit = Hit(0, 0.f, 0.f);
@@ -151,7 +151,7 @@ void main() {
     float lat = atan(pos.z / r);
     r = length(pos);
     float lon = atan(pos.y, pos.x);
-    // ÅÐ¶ÏÊÓÏßÓëÍâÇòµÚÒ»¸ö½»µã£¨¼´½øÈëÌåµÄÎ»ÖÃ£©ËùÔÚÏóÏÞ
+    // ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ã£¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     int entryOutOfRng = 0;
     if (lat < latitudeMin)
         entryOutOfRng |= 1;
@@ -165,12 +165,12 @@ void main() {
     hit = intersectSphere(d, heightMin);
     if (hit.isHit != 0)
         tExit = hit.tEntry;
-    // ÅÐ¶ÏÊÓÏßÀë¿ªÌåµÄÎ»ÖÃËùÔÚÏóÏÞ
+    // ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¿ªï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     pos = eyePos + tExit * d;
     r = sqrt(pos.x * pos.x + pos.y * pos.y);
     lat = atan(pos.z / r);
     lon = atan(pos.y, pos.x);
-    // ÈôÁ½¸öÎ»ÖÃ¾ù²»ÔÚ·¶Î§ÄÚ£¬ÇÒËùÔÚÏóÏÞÏàÍ¬£¬Ôò²»ÐèÒª¼ÆËã¸ÃÊÓÏß
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ã¾ï¿½ï¿½ï¿½ï¿½Ú·ï¿½Î§ï¿½Ú£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     gl_FragColor = vec4(0.f, 0.f, 0.f, 1.f);
     if ((entryOutOfRng & 1) != 0 && lat < latitudeMin)
         discard;
@@ -184,7 +184,7 @@ void main() {
     float hDlt = heightMax - heightMin;
     float latDlt = latitudeMax - latitudeMin;
     float lonDlt = longtitudeMax - longtitudeMin;
-    // ´¦ÀíÇÐÃæ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     SliceOnSphere slice;
     if (useSlicing) {
         slice = computeSliceOnSphere();
@@ -210,7 +210,7 @@ void main() {
             }
         }
     }
-    // Ö´ÐÐ¹âÏß´«²¥Ëã·¨
+    // Ö´ï¿½Ð¹ï¿½ï¿½ß´ï¿½ï¿½ï¿½ï¿½ã·¨
     vec4 color = vec4(0, 0, 0, 0);
     float tAcc = 0.f;
     float prevScalar0 = -1.f;
