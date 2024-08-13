@@ -59,6 +59,10 @@ VIS4Earth::DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent)
             osg::Vec3(0.f, 0.f, 0.f),
             static_cast<float>(osg::WGS_84_RADIUS_POLAR) +
                 geoCmpt.GetUI()->doubleSpinBox_heightMax_float_VIS4EarthReflectable->value()));
+        ssaoSphere->setShape(new osg::Sphere(
+            osg::Vec3(0.f, 0.f, 0.f),
+            static_cast<float>(osg::WGS_84_RADIUS_POLAR) +
+                geoCmpt.GetUI()->doubleSpinBox_heightMax_float_VIS4EarthReflectable->value()));
     };
     connect(geoCmpt.GetUI()->doubleSpinBox_heightMax_float_VIS4EarthReflectable,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), onHeightChanged);
@@ -188,6 +192,50 @@ void VIS4Earth::DirectVolumeRenderer::initOSGResource() {
         stateSet->addUniform(tfTexUni);
     }
 
+    colorTex = new osg::Texture2D;
+    normalTex = new osg::Texture2D;
+    depthTex = new osg::Texture2D;
+    {
+        colorTex->setTextureSize(2048, 1024);
+        colorTex->setInternalFormat(GL_RGBA32F_ARB);
+        colorTex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+        colorTex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+        auto colorImage = new osg::Image;
+        colorImage->allocateImage(2048, 1024, 1, GL_RGBA, GL_FLOAT);
+        colorTex->setImage(colorImage);
+        auto colorBinding = new osg::BindImageTexture(
+            0, colorTex, osg::BindImageTexture::WRITE_ONLY, GL_RGBA32F_ARB);
+        stateSet->setTextureAttributeAndModes(0, colorTex, osg::StateAttribute::ON);
+        stateSet->setAttribute(colorBinding);
+        stateSet->addUniform(new osg::Uniform("colorImage", 0));
+
+        normalTex->setTextureSize(2048, 1024);
+        normalTex->setInternalFormat(GL_RGBA32F_ARB);
+        normalTex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+        normalTex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+        auto normalImage = new osg::Image;
+        normalImage->allocateImage(2048, 1024, 1, GL_RGBA, GL_FLOAT);
+        normalTex->setImage(normalImage);
+        auto normalBinding = new osg::BindImageTexture(
+            1, normalTex, osg::BindImageTexture::WRITE_ONLY, GL_RGBA32F_ARB);
+        stateSet->setTextureAttributeAndModes(1, normalTex, osg::StateAttribute::ON);
+        stateSet->setAttribute(normalBinding);
+        stateSet->addUniform(new osg::Uniform("normalImage", 1));
+
+        depthTex->setTextureSize(2048, 1024);
+        depthTex->setInternalFormat(GL_RGBA32F_ARB);
+        depthTex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+        depthTex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+        auto depthImage = new osg::Image;
+        depthImage->allocateImage(2048, 1024, 1, GL_RGBA, GL_FLOAT);
+        depthTex->setImage(depthImage);
+        auto depthBinding = new osg::BindImageTexture(
+            2, depthTex, osg::BindImageTexture::WRITE_ONLY, GL_RGBA32F_ARB);
+        stateSet->setTextureAttributeAndModes(2, depthTex, osg::StateAttribute::ON);
+        stateSet->setAttribute(depthBinding);
+        stateSet->addUniform(new osg::Uniform("depthImage", 2));
+    }
+
     osg::ref_ptr<osg::CullFace> cf = new osg::CullFace(osg::CullFace::BACK);
     stateSet->setAttributeAndModes(cf);
 
@@ -198,4 +246,100 @@ void VIS4Earth::DirectVolumeRenderer::initOSGResource() {
     sphere->setCullCallback(new EyePositionUpdateCallback(eyePos));
 
     grp->addChild(sphere);
+
+    // SSAO shader
+    ssaoSphere = new osg::ShapeDrawable();
+    ssaoProgram = new osg::Program;
+
+    auto ssaoStateSet = ssaoSphere->getOrCreateStateSet();
+    ssaoStateSet->addUniform(dSamplePoss[0]);
+    for (auto obj : std::array<QtOSGReflectableWidget *, 3>{this, &geoCmpt, &volCmpt})
+        obj->ForEachProperty([&](const std::string &name, const Property &prop) {
+            ssaoStateSet->addUniform(prop.GetUniform());
+        });
+    {
+        osg::ref_ptr<osg::Shader> vertShader = osg::Shader::readShaderFile(
+            osg::Shader::VERTEX,
+            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/dvr_vert.glsl");
+        ssaoProgram->addShader(vertShader);
+
+        osg::ref_ptr<osg::Shader> fragShader = osg::Shader::readShaderFile(
+            osg::Shader::FRAGMENT,
+            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/dvr_ssao_frag.glsl");
+        ssaoProgram->addShader(fragShader);
+    }
+    {
+        ssaoStateSet->setTextureAttributeAndModes(0, colorTex, osg::StateAttribute::ON);
+        auto colorBinding = new osg::BindImageTexture(0, colorTex, osg::BindImageTexture::READ_ONLY,
+                                                      GL_RGBA32F_ARB);
+        ssaoStateSet->setAttribute(colorBinding);
+        ssaoStateSet->addUniform(new osg::Uniform("colorImage", 0));
+
+        ssaoStateSet->setTextureAttributeAndModes(1, normalTex, osg::StateAttribute::ON);
+        auto normalBinding = new osg::BindImageTexture(
+            1, normalTex, osg::BindImageTexture::READ_ONLY, GL_RGBA32F_ARB);
+        ssaoStateSet->setAttribute(normalBinding);
+        ssaoStateSet->addUniform(new osg::Uniform("normalImage", 1));
+
+        ssaoStateSet->setTextureAttributeAndModes(2, depthTex, osg::StateAttribute::ON);
+        auto depthBinding = new osg::BindImageTexture(2, depthTex, osg::BindImageTexture::READ_ONLY,
+                                                      GL_RGBA32F_ARB);
+        ssaoStateSet->setAttribute(depthBinding);
+        ssaoStateSet->addUniform(new osg::Uniform("depthImage", 2));
+    }
+    {
+        // generate sample kernel
+        const int kernelSize = 64;
+        ssaoStateSet->addUniform(new osg::Uniform("kernelSize", kernelSize));
+        auto sampleUni = new osg::Uniform(osg::Uniform::FLOAT_VEC3, "samples", 64);
+        std::uniform_real_distribution<float> randomFloats(0.0,
+                                                           1.0); // random floats between [0.0, 1.0]
+        std::default_random_engine generator(time(nullptr));
+        for (unsigned int i = 0; i < kernelSize; ++i) {
+            osg::Vec3 sample(randomFloats(generator) * 2.0 - 1.0,
+                             randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+            sample.normalize();
+            sample *= randomFloats(generator);
+            float scale = float(i) / kernelSize;
+
+            // scale samples s.t. they're more aligned to center of kernel
+            scale = 0.1f + (scale * scale) * (1.0f - 0.1f);
+            sample *= scale;
+            sampleUni->setElement(i, sample);
+        }
+        ssaoStateSet->addUniform(sampleUni);
+
+        // generate noise texture
+        ssaoNoise = new float[16 * 4];
+        for (unsigned int i = 0; i < 16; i++) {
+            ssaoNoise[i * 4] = randomFloats(generator) * 2.0 - 1.0;
+            ssaoNoise[i * 4 + 1] = randomFloats(generator) * 2.0 - 1.0;
+            ssaoNoise[i * 4 + 2] = 0.f;
+            ssaoNoise[i * 4 + 3] = 1.f;
+        }
+        auto noiseTex = new osg::Texture2D;
+        noiseTex->setTextureSize(4, 4);
+        noiseTex->setInternalFormat(GL_RGBA16F_ARB);
+        noiseTex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST);
+        noiseTex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::NEAREST);
+        noiseTex->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
+        noiseTex->setWrap(osg::Texture::WRAP_T, osg::Texture::REPEAT);
+        auto noiseImage = new osg::Image;
+        noiseImage->setImage(4, 4, 1, GL_RGBA, GL_RGBA, GL_FLOAT, (unsigned char *)ssaoNoise,
+                             osg::Image::USE_NEW_DELETE);
+        noiseImage->dirty();
+        noiseTex->setImage(noiseImage);
+        ssaoStateSet->setTextureAttributeAndModes(3, noiseTex, osg::StateAttribute::ON);
+        ssaoStateSet->addUniform(new osg::Uniform("texNoise", 3));
+    }
+
+    ssaoStateSet->setAttributeAndModes(cf);
+
+    ssaoStateSet->setAttributeAndModes(ssaoProgram, osg::StateAttribute::ON);
+    ssaoStateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
+    ssaoStateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+    ssaoSphere->setCullCallback(new EyePositionUpdateCallback(eyePos));
+
+    grp->addChild(ssaoSphere);
 }

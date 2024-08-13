@@ -140,6 +140,13 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="checkBox_useSSAO_bool_VIS4EarthReflectable">
+            <property name="text">
+             <string>使用SSAO</string>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="4">
            <widget class="QSpinBox" name="spinBox_maxStepCnt_int_VIS4EarthReflectable">
             <property name="maximum">
