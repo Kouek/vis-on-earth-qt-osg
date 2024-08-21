@@ -16,21 +16,23 @@
 
 #include <vis4earth/info_viser/pie_chart.h>
 
-static const std::string volPath = DATA_PATH_PREFIX"OSS/OSS000.raw";
-static const std::string volDPath0 = "C:/Code/bin/data/vis-osg-scatter-plot/piechart0.txt";
-static const std::string volDPath1 = "C:/Code/bin/data/vis-osg-scatter-plot/linechart1.txt";
-static const std::string volDPath2 = "C:/Code/bin/data/vis-osg-scatter-plot/linechart2.txt";
-static const std::string volDPath3 = "C:/Code/bin/data/vis-osg-scatter-plot/linechart3.txt";
+//static const std::string volPath = DATA_PATH_PREFIX"OSS/OSS000.raw";
+//static const std::string volDPath0 = "C:/Code/bin/data/vis-osg-scatter-plot/piechart0.txt";
+//static const std::string volDPath1 = "C:/Code/bin/data/vis-osg-scatter-plot/linechart1.txt";
+//static const std::string volDPath2 = "C:/Code/bin/data/vis-osg-scatter-plot/linechart2.txt";
+//static const std::string volDPath3 = "C:/Code/bin/data/vis-osg-scatter-plot/linechart3.txt";
 static const std::string volName0 = "0";
-static const std::string volName1 = "1";
-static const std::string volName2 = "2";
-static const std::string volName3 = "3";
+//static const std::string volName1 = "1";
+//static const std::string volName2 = "2";
+//static const std::string volName3 = "3";
 
+// unused
 static const std::array<uint32_t, 3> dim = { 300, 350, 50 };
 static const std::array<uint32_t, 3> graphDim = { 100, 100, 50 };
 static const std::array<int32_t, 3> coordinateDimMax = { 3, 3, 2 };
 static const std::array<int32_t, 3> coordinateDimMin = { -3, -3, -2 };
 static const std::array<uint8_t, 3> log2Dim = { 9, 9, 6 };
+
 static const std::array<float, 2> lonRng = { 100.05f, 129.95f };
 static const std::array<float, 2> latRng = { -4.95f, 29.95 };
 // static const std::array<float, 2> hRng = { 1.f, 5316.f };

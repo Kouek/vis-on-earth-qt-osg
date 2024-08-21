@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include <osg/Vec3>
+#include <osg/Vec4>
 
 namespace VIS4Earth
 {
@@ -107,39 +108,70 @@ namespace VIS4Earth
 				return ret;
 
 			}
-			///* ��ȡtxt��״ͼ�ļ� */
-			//static std::vector<std::pair<std::wstring, float>> LoadFromPieFile(const std::string& filePath, std::string* errMsg = nullptr)
-			//{
-			//	std::wifstream is(filePath);
+
+			static std::vector<std::pair<osg::Vec3f, float>> LoadFromParFile(const std::string& filePath, std::string* errMsg = nullptr) {
+				std::ifstream is(filePath);
+				if (!is.is_open()) {
+					if (errMsg)
+						*errMsg = "Invalid File Path";
+					return std::vector<std::pair<osg::Vec3f, float>>();
+				}
+
+				std::string line;
+				std::vector<std::pair<osg::Vec3f, float>> ret;
+				int flag = 0;
+				while (std::getline(is, line)) {
+					/*if (flag == 0) {
+						flag++;
+						continue;
+					}*/
+					float lon, lat, t, data;
+					// float x, y, z;
+					std::stringstream ss(line);
+					ss >> lon;
+					ss >> lat;
+					ss >> t;
+					ss >> data;
+					osg::Vec3f point(lon, lat, data);
+					
+					ret.push_back(std::make_pair(point, t));
+					//flag--;
+				}
+				return ret;
+
+			}
+		
+			//static std::vector<std::vector<float>> LoadFromRadarFile(const std::string& filePath, std::string* errMsg = nullptr) {
+			//	std::ifstream is(filePath);
 			//	if (!is.is_open()) {
 			//		if (errMsg)
 			//			*errMsg = "Invalid File Path";
-			//		return std::vector<std::pair<std::wstring, float>>();
+			//		return std::vector<std::vector<float>>();
 			//	}
-
-			//	std::wstring line;
-			//	std::vector<std::pair<std::wstring, float>> ret;
-			//	int flag = 0;
+			//	std::vector<std::vector<float>> data;
+			//	std::string line;
+			//	// 先读入雷达图的维数
+			//	int dim;
+			//	std::getline(is, line);
+			//	std::stringstream ss(line);
+			//	ss >> dim;
+			//	std::cout << "dim=" << dim << std::endl;
+			//	
 			//	while (std::getline(is, line)) {
-			//		/*if (flag == 0) {
-			//			flag++;
-			//			continue;
-			//		}*/
-			//		std::wstring label;
-			//		float proportion;
-			//		std::wstringstream ss(line);
-			//		ss >> label;
-			//		ss >> proportion;
-
-			//		std::wcout << label << L" " << proportion << std::endl;
-			//		std::wcout << line << std::endl;
-
-
-			//		ret.push_back(std::make_pair(label, proportion));
-			//		//flag--;
+			//		// 处理一行当中的数据
+			//		std::vector<float> grp;
+			//		std::stringstream ss(line);
+			//		int temp = dim;
+			//		while (temp) {
+			//			float d;
+			//			ss >> d;
+			//			std::cout << d << std::endl;
+			//			grp.push_back(d);
+			//			temp--;
+			//		}
+			//		data.push_back(grp);
 			//	}
-			//	return ret;
-
+			//	return data;
 			//}
 		};
 
