@@ -137,7 +137,7 @@ void VIS4Earth::VolumeComponent::loadTF() {
         return;
     }
 
-    tfEditors[ui->comboBox_smoothType->currentIndex()]->SetTransferFunctionData(tfDat.result.dat);
+    tfEditors[ui->comboBox_currVolID->currentIndex()]->SetTransferFunctionData(tfDat.result.dat);
 }
 
 void VIS4Earth::VolumeComponent::saveTF() { assert(false); }
