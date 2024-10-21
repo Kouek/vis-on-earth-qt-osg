@@ -3,6 +3,7 @@
 
 #include <QtCore/QTimer>
 
+#include <osg/BindImageTexture>
 #include <osg/CoordinateSystemnode>
 #include <osg/Cullface>
 #include <osg/Group>
@@ -12,6 +13,8 @@
 #include <vis4earth/osg_util.h>
 #include <vis4earth/qt_osg_reflectable.h>
 #include <vis4earth/volume_cmpt.h>
+
+#include <random>
 
 namespace Ui {
 class DirectVolumeRenderer;
@@ -24,6 +27,7 @@ class DirectVolumeRenderer : public QtOSGReflectableWidget {
 
   public:
     DirectVolumeRenderer(QWidget *parent = nullptr);
+    ~DirectVolumeRenderer() { delete ssaoNoise; }
 
     osg::ref_ptr<osg::Group> GetGroup() const { return grp; }
 
@@ -31,15 +35,19 @@ class DirectVolumeRenderer : public QtOSGReflectableWidget {
     osg::ref_ptr<osg::Group> grp;
     osg::ref_ptr<osg::ShapeDrawable> sphere;
     osg::ref_ptr<osg::Program> program;
+    osg::ref_ptr<osg::ShapeDrawable> ssaoSphere;
+    osg::ref_ptr<osg::Program> ssaoProgram;
 
     osg::ref_ptr<osg::Uniform> eyePos;
     std::array<osg::ref_ptr<osg::Uniform>, 2> dSamplePoss;
     osg::ref_ptr<osg::Uniform> useMultiVols;
+    osg::ref_ptr<osg::Texture2D> colorTex, normalTex, depthTex;
 
     Ui::DirectVolumeRenderer *ui;
     QTimer timer;
     GeographicsComponent geoCmpt;
     VolumeComponent volCmpt;
+    float *ssaoNoise;
 
     void initOSGResource();
 };

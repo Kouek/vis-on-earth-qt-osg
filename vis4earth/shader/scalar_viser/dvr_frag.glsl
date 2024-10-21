@@ -1,4 +1,4 @@
-#version 130
+#version 430 core
 
 #define SkipAlpha (.95f)
 #define PI (3.14159f)
@@ -38,6 +38,9 @@ uniform bool useSlicing;
 uniform bool useShading;
 uniform bool useTFPreInt;
 uniform bool useMultiVols;
+layout(binding = 0, rgba32f) uniform image2D colorImage;
+layout(binding = 1, rgba32f) uniform image2D normalImage;
+layout(binding = 2, rgba32f) uniform image2D depthImage;
 
 varying vec3 vertex;
 
@@ -118,6 +121,17 @@ vec3 computeShading(vec3 tfCol, vec3 d, vec3 pos, vec3 samplePos, vec3 dSamplePo
     return (ambient + diffuse + specular) * tfCol;
 }
 
+vec3 computeNormal(vec3 samplePos, vec3 dSamplePos, sampler3D volTex) {
+    vec3 N;
+    N.x = texture(volTex, samplePos + vec3(dSamplePos.x, 0, 0)).r -
+    texture(volTex, samplePos - vec3(dSamplePos.x, 0, 0)).r;
+    N.y = texture(volTex, samplePos + vec3(0, dSamplePos.y, 0)).r -
+    texture(volTex, samplePos - vec3(0, dSamplePos.y, 0)).r;
+    N.z = texture(volTex, samplePos + vec3(0, 0, dSamplePos.z)).r -
+    texture(volTex, samplePos - vec3(0, 0, dSamplePos.z)).r;
+    return abs(normalize(N));
+}
+
 /*
  * 函数: intersectSlice
  * 功能: 返回视线与切面相交的位置
@@ -139,6 +153,9 @@ Hit intersectSlice(vec3 e2pDir, SliceOnSphere slice) {
 }
 
 void main() {
+    imageStore(colorImage, ivec2(gl_FragCoord.xy), vec4(0.f, 0.f, 0.f, 0.f));
+    imageStore(normalImage, ivec2(gl_FragCoord.xy), vec4(0.f, 0.f, 0.f, 0.f));
+    imageStore(depthImage, ivec2(gl_FragCoord.xy), vec4(0.f, 0.f, 0.f, 0.f));
     vec3 d = normalize(vertex - eyePos);
     Hit hit = intersectSphere(d, heightMax);
     if (hit.isHit == 0)
@@ -212,6 +229,7 @@ void main() {
     }
     // 执行光线传播算法
     vec4 color = vec4(0, 0, 0, 0);
+    bool normalImageWritten = false;
     float tAcc = 0.f;
     float prevScalar0 = -1.f;
     float prevScalar1 = -1.f;
@@ -241,6 +259,13 @@ void main() {
             else
                 tfCol = texture(tfTex0, scalar);
             prevScalar0 = scalar;
+
+            if (!normalImageWritten && tfCol.a > 0.f) {
+                vec3 normal = computeNormal(samplePos, dSamplePos0, volTex0);
+                imageStore(normalImage, ivec2(gl_FragCoord.xy), vec4(normal, 1.f));
+                imageStore(depthImage, ivec2(gl_FragCoord.xy), vec4(r, 0.f, 0.f, 1.f));
+                normalImageWritten = true;
+            }
 
             if (useShading && tfCol.a > 0.f)
                 tfCol.rgb = computeShading(tfCol.rgb, d, pos, samplePos, dSamplePos0, volTex0);
@@ -281,5 +306,6 @@ void main() {
         ++stepCnt;
     } while (tAcc < tExit && stepCnt <= maxStepCnt);
 
-    gl_FragColor = color;
+    imageStore(colorImage, ivec2(gl_FragCoord.xy), color);
+    gl_FragColor = vec4(0.f, 0.f, 0.f, 0.f);
 }
