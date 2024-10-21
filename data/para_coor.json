@@ -1,0 +1,35 @@
+{
+  "parallelAxis": [
+    {
+      "name": "Price",
+      "coordinate": [ 0.0, 0.0 ],
+      "minimum": 0.0,
+      "maximum": 20.0
+    },
+    {
+      "name": "Net Weight",
+      "coordinate": [ 0.1, 0.1 ],
+      "minimum": 0,
+      "maximum": 120
+    },
+    {
+      "name": "Amount",
+      "coordinate": [ 0.3, 0.0 ],
+      "minimum": 0,
+      "maximum": 100
+    },
+    {
+      "name": "Score",
+      "coordinate": [ 0.4, 0.2 ],
+      "type": "category",
+      "data": [ "Excellent", "Good", "OK", "Bad" ]
+    }
+  ],
+  "series": {
+    "data": [
+      ["A", 12.99, 100, 82, "Good"],
+      ["B", 9.99, 80, 77, "OK"],
+      ["C", 20, 120, 60, "Excellent"]
+    ]
+  }
+}
