@@ -57,6 +57,19 @@
          <string>RAW体数据</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="spinBox_voxPerVolX">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>1024</number>
+           </property>
+           <property name="value">
+            <number>300</number>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_2">
            <property name="sizePolicy">
@@ -70,20 +83,20 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="spinBox_voxPerVolX">
-           <property name="minimum">
-            <number>1</number>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-           <property name="maximum">
-            <number>1024</number>
-           </property>
-           <property name="value">
-            <number>300</number>
+           <property name="text">
+            <string>尺寸(X,Y,Z)</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="2">
+         <item row="3" column="2">
           <widget class="QSpinBox" name="spinBox_voxPerVolY">
            <property name="minimum">
             <number>1</number>
@@ -96,7 +109,14 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="3">
+         <item row="4" column="0" colspan="4">
+          <widget class="QPushButton" name="pushButton_loadRAWVolume">
+           <property name="text">
+            <string>加载RAW数据</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
           <widget class="QSpinBox" name="spinBox_voxPerVolZ">
            <property name="minimum">
             <number>1</number>
@@ -110,22 +130,30 @@
           </widget>
          </item>
          <item row="2" column="0">
-          <widget class="QLabel" name="label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
+          <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>尺寸(X,Y,Z)</string>
+            <string>已加载尺寸</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="0" colspan="4">
-          <widget class="QPushButton" name="pushButton_loadRAWVolume">
+         <item row="2" column="1">
+          <widget class="QLabel" name="label_voxPerVolX">
            <property name="text">
-            <string>加载RAW数据</string>
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLabel" name="label_voxPerVolY">
+           <property name="text">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QLabel" name="label_voxPerVolZ">
+           <property name="text">
+            <string>0</string>
            </property>
           </widget>
          </item>

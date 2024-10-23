@@ -29,7 +29,14 @@ class DirectVolumeRenderer : public QtOSGReflectableWidget {
 
   protected:
     osg::ref_ptr<osg::Group> grp;
+#ifdef VIS4EARTH_USE_OLD_RENDERER
     osg::ref_ptr<osg::ShapeDrawable> sphere;
+#else
+    osg::ref_ptr<osg::Geometry> geom;
+    osg::ref_ptr<osg::Geode> geode;
+    osg::ref_ptr<osg::Vec3Array> verts;
+    osg::ref_ptr<osg::Uniform> MVP;
+#endif
     osg::ref_ptr<osg::Program> program;
 
     osg::ref_ptr<osg::Uniform> eyePos;
@@ -42,6 +49,15 @@ class DirectVolumeRenderer : public QtOSGReflectableWidget {
     VolumeComponent volCmpt;
 
     void initOSGResource();
+
+#ifdef VIS4EARTH_USE_OLD_RENDERER
+#else
+  public:
+    void SetCamera(osg::ref_ptr<osg::Camera> camera);
+
+  private:
+    void updateGeometry();
+#endif
 };
 
 } // namespace VIS4Earth

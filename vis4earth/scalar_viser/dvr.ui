@@ -59,6 +59,22 @@
           <string>绘制与光照</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
+          <item row="3" column="0">
+           <widget class="QLabel" name="label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>ka</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="5" column="0">
            <widget class="QLabel" name="label_7">
             <property name="sizePolicy">
@@ -75,8 +91,11 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="3">
-           <widget class="QLabel" name="label_4">
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_step_float_VIS4EarthReflectable"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_3">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -84,10 +103,23 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>shininess</string>
+             <string>ks</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="3">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_lightPosY_float_VIS4EarthReflectable">
+            <property name="minimum">
+             <double>-90.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>90.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>-4.950000000000000</double>
             </property>
            </widget>
           </item>
@@ -103,16 +135,6 @@
              <string>最大步数</string>
             </property>
             <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="checkBox_useTFPreInt_bool_VIS4EarthReflectable">
-            <property name="text">
-             <string>使用预积分传输函数</string>
-            </property>
-            <property name="checked">
              <bool>true</bool>
             </property>
            </widget>
@@ -133,20 +155,36 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QCheckBox" name="checkBox_useShading_bool_VIS4EarthReflectable">
-            <property name="text">
-             <string>使用光照</string>
+          <item row="5" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_lightPosX_float_VIS4EarthReflectable">
+            <property name="minimum">
+             <double>-180.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>180.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>100.049999999999997</double>
             </property>
            </widget>
           </item>
-          <item row="1" column="4">
-           <widget class="QSpinBox" name="spinBox_maxStepCnt_int_VIS4EarthReflectable">
+          <item row="5" column="4">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_lightPosZ_float_VIS4EarthReflectable">
             <property name="maximum">
-             <number>10000</number>
+             <double>10000000.000000000000000</double>
             </property>
             <property name="value">
-             <number>600</number>
+             <double>6000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_shininess_float_VIS4EarthReflectable">
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="value">
+             <double>32.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -160,8 +198,55 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_3">
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="checkBox_useShading_bool_VIS4EarthReflectable">
+            <property name="text">
+             <string>使用光照</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_kd_float_VIS4EarthReflectable">
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.400000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox_ka_float_VIS4EarthReflectable">
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.400000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="checkBox_useTFPreInt_bool_VIS4EarthReflectable">
+            <property name="text">
+             <string>使用预积分传输函数</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QSpinBox" name="spinBox_maxStepCnt_int_VIS4EarthReflectable">
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+            <property name="value">
+             <number>600</number>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLabel" name="label_4">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -169,7 +254,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>ks</string>
+             <string>shininess</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -192,88 +277,43 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_step_float_VIS4EarthReflectable"/>
-          </item>
-          <item row="4" column="4">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_shininess_float_VIS4EarthReflectable">
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-            <property name="value">
-             <double>32.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_lightPosX_float_VIS4EarthReflectable">
-            <property name="minimum">
-             <double>-180.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>180.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>100.049999999999997</double>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="4">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_kd_float_VIS4EarthReflectable">
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-            <property name="value">
-             <double>0.400000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>ka</string>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
+             <string>细分度</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_ka_float_VIS4EarthReflectable">
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-            <property name="value">
-             <double>0.400000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="3">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_lightPosY_float_VIS4EarthReflectable">
+          <item row="6" column="1">
+           <widget class="QSpinBox" name="spinBox_tessellationX">
             <property name="minimum">
-             <double>-90.000000000000000</double>
+             <number>1</number>
             </property>
             <property name="maximum">
-             <double>90.000000000000000</double>
+             <number>300</number>
             </property>
             <property name="value">
-             <double>-4.950000000000000</double>
+             <number>50</number>
             </property>
            </widget>
           </item>
-          <item row="5" column="4">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_lightPosZ_float_VIS4EarthReflectable">
+          <item row="6" column="3">
+           <widget class="QSpinBox" name="spinBox_tessellationY">
+            <property name="minimum">
+             <number>1</number>
+            </property>
             <property name="maximum">
-             <double>10000000.000000000000000</double>
+             <number>300</number>
             </property>
             <property name="value">
-             <double>6000000.000000000000000</double>
+             <number>50</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="checkBox_useAO_bool_VIS4EarthReflectable">
+            <property name="text">
+             <string>使用遮蔽</string>
             </property>
            </widget>
           </item>

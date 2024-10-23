@@ -38,6 +38,20 @@ template <typename Ty> class UniformUpdateCallback : public osg::UniformCallback
     virtual void operator()(osg::Uniform *uniform, osg::NodeVisitor *nv) { uniform->set(dat); }
 };
 
+class MVPCallback : public osg::Uniform::Callback {
+  public:
+    MVPCallback(osg::ref_ptr<osg::Camera> camera) : camera(camera) {}
+
+    virtual void operator()(osg::Uniform *uniform, osg::NodeVisitor *nv) {
+        osg::Matrixf V = camera->getViewMatrix();
+        osg::Matrixf P = camera->getProjectionMatrix();
+        uniform->set(V * P);
+    }
+
+  private:
+    osg::ref_ptr<osg::Camera> camera;
+};
+
 class EyePositionUpdateCallback : public osg::NodeCallback {
   private:
     osg::ref_ptr<osg::Uniform> eyePosUni;

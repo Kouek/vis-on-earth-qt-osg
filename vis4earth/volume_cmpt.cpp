@@ -26,10 +26,7 @@ VIS4Earth::VolumeComponent::VolumeComponent(bool keepCPUData, bool keepVolSmooth
         if (GetVolumeTimeNumber(idx) == 0)
             return;
 
-        auto vol = multiTimeVaryingVols[idx][0];
-        ui->spinBox_voxPerVolX->setValue(vol->getImage()->s());
-        ui->spinBox_voxPerVolY->setValue(vol->getImage()->t());
-        ui->spinBox_voxPerVolZ->setValue(vol->getImage()->r());
+        updateVoxelPerVolume();
     };
     connect(ui->comboBox_currVolID, QOverload<int>::of(&QComboBox::currentIndexChanged),
             changeVolID);
@@ -80,6 +77,7 @@ void VIS4Earth::VolumeComponent::loadRAWVolume() {
     }
 
     smoothVolume();
+    updateVoxelPerVolume();
 }
 
 void VIS4Earth::VolumeComponent::smoothVolume() {
@@ -153,4 +151,24 @@ void VIS4Earth::VolumeComponent::sampleTF() {
         sample(vi);
 
     emit TransferFunctionChanged();
+}
+
+void VIS4Earth::VolumeComponent::updateVoxelPerVolume() {
+    int volIdx = ui->comboBox_currVolID->currentIndex();
+
+    std::array<int, 3> voxPerVol;
+    if (keepCPUData) {
+        auto &vol = multiTimeVaryingVolCPUs[volIdx][0];
+        voxPerVol[0] = vol.GetVoxelPerVolume()[0];
+        voxPerVol[1] = vol.GetVoxelPerVolume()[1];
+        voxPerVol[2] = vol.GetVoxelPerVolume()[2];
+    } else {
+        auto vol = multiTimeVaryingVols[volIdx][0];
+        voxPerVol[0] = vol->getImage()->s();
+        voxPerVol[1] = vol->getImage()->t();
+        voxPerVol[2] = vol->getImage()->r();
+    }
+    ui->label_voxPerVolX->setText(QString("%0").arg(voxPerVol[0]));
+    ui->label_voxPerVolY->setText(QString("%0").arg(voxPerVol[1]));
+    ui->label_voxPerVolZ->setText(QString("%0").arg(voxPerVol[2]));
 }

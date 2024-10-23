@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
     grp->addChild(VIS4Earth::CreateEarth());
 
     VIS4Earth::DirectVolumeRenderer dvr;
+    dvr.SetCamera(viewer->getCamera());
     grp->addChild(dvr.GetGroup());
     dvr.show();
 

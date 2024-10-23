@@ -99,9 +99,9 @@ void VIS4Earth::IsoplethRenderer::initOSGResource() {
 
 void VIS4Earth::IsoplethRenderer::marchingSquare(uint32_t volID) {
     using T = uint8_t;
-    std::array<uint32_t, 3> voxPerVol = {volCmpt.GetUI()->spinBox_voxPerVolX->value(),
-                                         volCmpt.GetUI()->spinBox_voxPerVolY->value(),
-                                         volCmpt.GetUI()->spinBox_voxPerVolZ->value()};
+    std::array<uint32_t, 3> voxPerVol = {volCmpt.GetUI()->label_voxPerVolX->text().toInt(),
+                                         volCmpt.GetUI()->label_voxPerVolY->text().toInt(),
+                                         volCmpt.GetUI()->label_voxPerVolZ->text().toInt()};
     auto voxPerVolYxX = static_cast<size_t>(voxPerVol[1]) * voxPerVol[0];
 
     auto sample = [&](const osg::Vec3i &pos) -> T {

@@ -139,7 +139,7 @@ void VIS4Earth::HeatmapRenderer::updateHeatmap2D() {
     std::array<float, 3> scale{1.f * (vol.GetVoxelPerVolume()[0] - 1) / heatmap2D.width(),
                                1.f * (vol.GetVoxelPerVolume()[1] - 1) / heatmap2D.height(),
                                1.f * (vol.GetVoxelPerVolume()[2] - 1) /
-                                   volCmpt.GetVolume(0, 0)->getImage()->r()};
+                                   (volCmpt.GetVolume(0, 0)->getImage()->r() - 1)};
     int z = ui->spinBox_height_int_VIS4EarthReflectable->value() * scale[2];
     for (int y = 0; y < heatmap2D.height(); ++y) {
         auto pxPtr = reinterpret_cast<QRgb *>(heatmap2D.scanLine(heatmap2D.height() - 1 - y));

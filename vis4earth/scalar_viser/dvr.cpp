@@ -54,6 +54,20 @@ VIS4Earth::DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent)
 
     initOSGResource();
 
+#ifdef VIS4EARTH_USE_OLD_RENDERER
+    ui->spinBox_tessellationX->setEnabled(false);
+    ui->spinBox_tessellationY->setEnabled(false);
+#else
+    connect(ui->spinBox_tessellationX, &QSpinBox::editingFinished, this,
+            &DirectVolumeRenderer::updateGeometry);
+    connect(ui->spinBox_tessellationY, &QSpinBox::editingFinished, this,
+            &DirectVolumeRenderer::updateGeometry);
+    updateGeometry();
+#endif
+
+#ifdef VIS4EARTH_USE_OLD_RENDERER
+    auto stateSet = sphere->getOrCreateStateSet();
+
     auto onHeightChanged = [&](double) {
         sphere->setShape(new osg::Sphere(
             osg::Vec3(0.f, 0.f, 0.f),
@@ -63,6 +77,7 @@ VIS4Earth::DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent)
     connect(geoCmpt.GetUI()->doubleSpinBox_heightMax_float_VIS4EarthReflectable,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), onHeightChanged);
     onHeightChanged(0.);
+#endif
 
     connect(&volCmpt, &VolumeComponent::VolumeChanged, [&]() {
         for (int i = 0; i < 2; ++i) {
@@ -79,7 +94,11 @@ VIS4Earth::DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent)
     });
 
     auto changeTF = [&]() {
+#ifdef VIS4EARTH_USE_OLD_RENDERER
         auto stateSet = sphere->getOrCreateStateSet();
+#else
+        auto stateSet = geode->getOrCreateStateSet();
+#endif
         stateSet->setTextureAttributeAndModes(2, volCmpt.GetPreIntegratedTransferFunction(0),
                                               osg::StateAttribute::ON);
         stateSet->setTextureAttributeAndModes(3, volCmpt.GetPreIntegratedTransferFunction(1),
@@ -95,7 +114,11 @@ VIS4Earth::DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent)
     auto changeVol = [&]() {
         static uint32_t currTimeID = 0;
 
+#ifdef VIS4EARTH_USE_OLD_RENDERER
         auto stateSet = sphere->getOrCreateStateSet();
+#else
+        auto stateSet = geode->getOrCreateStateSet();
+#endif
         int validVolNum = 0;
         for (int i = 0; i < 2; ++i) {
             auto timeNum = volCmpt.GetVolumeTimeNumber(i);
@@ -138,10 +161,21 @@ VIS4Earth::DirectVolumeRenderer::DirectVolumeRenderer(QWidget *parent)
 
 void VIS4Earth::DirectVolumeRenderer::initOSGResource() {
     grp = new osg::Group();
-    sphere = new osg::ShapeDrawable();
     program = new osg::Program;
 
+#ifdef VIS4EARTH_USE_OLD_RENDERER
+    sphere = new osg::ShapeDrawable();
     auto stateSet = sphere->getOrCreateStateSet();
+#else
+    geom = new osg::Geometry();
+    geode = new osg::Geode();
+    verts = new osg::Vec3Array();
+    auto stateSet = geode->getOrCreateStateSet();
+
+    MVP = new osg::Uniform("MVP", osg::Matrixf());
+    stateSet->addUniform(MVP);
+#endif
+
     eyePos = new osg::Uniform("eyePos", osg::Vec3());
     dSamplePoss[0] = new osg::Uniform("dSamplePos0", osg::Vec3(1.f, 1.f, 1.f));
     dSamplePoss[1] = new osg::Uniform("dSamplePos1", osg::Vec3(1.f, 1.f, 1.f));
@@ -156,12 +190,21 @@ void VIS4Earth::DirectVolumeRenderer::initOSGResource() {
             stateSet->addUniform(prop.GetUniform());
         });
     {
+#ifdef VIS4EARTH_USE_OLD_RENDERER
         osg::ref_ptr<osg::Shader> vertShader = osg::Shader::readShaderFile(
             osg::Shader::VERTEX,
             GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/dvr_vert.glsl");
         osg::ref_ptr<osg::Shader> fragShader = osg::Shader::readShaderFile(
             osg::Shader::FRAGMENT,
             GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/dvr_frag.glsl");
+#else
+        osg::ref_ptr<osg::Shader> vertShader = osg::Shader::readShaderFile(
+            osg::Shader::VERTEX,
+            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/dvr_vert_new.glsl");
+        osg::ref_ptr<osg::Shader> fragShader = osg::Shader::readShaderFile(
+            osg::Shader::FRAGMENT,
+            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/dvr_frag_new.glsl");
+#endif
         program->addShader(vertShader);
         program->addShader(fragShader);
     }
@@ -188,14 +231,103 @@ void VIS4Earth::DirectVolumeRenderer::initOSGResource() {
         stateSet->addUniform(tfTexUni);
     }
 
+#ifdef VIS4EARTH_USE_OLD_RENDERER
     osg::ref_ptr<osg::CullFace> cf = new osg::CullFace(osg::CullFace::BACK);
+#else
+    osg::ref_ptr<osg::CullFace> cf = new osg::CullFace(osg::CullFace::FRONT);
+#endif
     stateSet->setAttributeAndModes(cf);
 
     stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
     stateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
     stateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 
+#ifdef VIS4EARTH_USE_OLD_RENDERER
     sphere->setCullCallback(new EyePositionUpdateCallback(eyePos));
-
     grp->addChild(sphere);
+#else
+    geode->setCullCallback(new EyePositionUpdateCallback(eyePos));
+    geode->addChild(geom);
+    grp->addChild(geode);
+#endif
 }
+
+#ifdef VIS4EARTH_USE_OLD_RENDERER
+#else
+void VIS4Earth::DirectVolumeRenderer::SetCamera(osg::ref_ptr<osg::Camera> camera) {
+    MVP->setUpdateCallback(new MVPCallback(camera));
+}
+
+void VIS4Earth::DirectVolumeRenderer::updateGeometry() {
+    verts->clear();
+
+    auto res = ui->spinBox_tessellationX->value() * ui->spinBox_tessellationY->value();
+    verts->reserve(res);
+    uint32_t btmSurfVertStart;
+    auto genSurfVertices = [&](bool isTop) {
+        for (int latIdx = 0; latIdx < ui->spinBox_tessellationY->value(); ++latIdx)
+            for (int lonIdx = 0; lonIdx < ui->spinBox_tessellationX->value(); ++lonIdx) {
+                osg::Vec3 pos(1.f * lonIdx / (ui->spinBox_tessellationX->value() - 1),
+                              1.f * latIdx / (ui->spinBox_tessellationY->value() - 1),
+                              isTop ? 1.f : 0.f);
+
+                verts->push_back(pos);
+            }
+    };
+    genSurfVertices(true);
+    btmSurfVertStart = verts->size();
+    genSurfVertices(false);
+
+    std::vector<GLuint> vertIndices;
+    auto addTri = [&](std::array<GLuint, 3> triIndices) {
+        for (uint8_t i = 0; i < 3; ++i)
+            vertIndices.emplace_back(triIndices[i]);
+    };
+    auto addTopBotSurf = [&](bool isTop, int latIdx, int lonIdx) {
+        auto start = isTop ? 0 : btmSurfVertStart;
+        std::array<GLuint, 4> quadIndices = {
+            start + latIdx * ui->spinBox_tessellationX->value() + lonIdx,
+            start + latIdx * ui->spinBox_tessellationX->value() + lonIdx + (isTop ? 1 : -1),
+            start + (latIdx + 1) * ui->spinBox_tessellationX->value() + lonIdx + (isTop ? 1 : -1),
+            start + (latIdx + 1) * ui->spinBox_tessellationX->value() + lonIdx};
+
+        addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
+        addTri({quadIndices[0], quadIndices[2], quadIndices[3]});
+    };
+    for (int latIdx = 0; latIdx < ui->spinBox_tessellationY->value() - 1; ++latIdx)
+        for (int lonIdx = 0; lonIdx < ui->spinBox_tessellationX->value() - 1; ++lonIdx) {
+            addTopBotSurf(true, latIdx, lonIdx);
+            addTopBotSurf(false, latIdx, ui->spinBox_tessellationX->value() - 1 - lonIdx);
+        }
+
+    auto addSideSurf = [&](int latIdx, int lonIdx, const osg::Vec2i &dir) {
+        std::array<GLuint, 4> quadIndices = {
+            btmSurfVertStart + latIdx * ui->spinBox_tessellationX->value() + lonIdx,
+            btmSurfVertStart + (latIdx + dir.y()) * ui->spinBox_tessellationX->value() + lonIdx +
+                dir.x(),
+            (latIdx + dir.y()) * ui->spinBox_tessellationX->value() + lonIdx + dir.x(),
+            latIdx * ui->spinBox_tessellationX->value() + lonIdx};
+        addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
+        addTri({quadIndices[0], quadIndices[2], quadIndices[3]});
+    };
+    for (int lonIdx = 0; lonIdx < ui->spinBox_tessellationX->value() - 1; ++lonIdx) {
+        addSideSurf(0, lonIdx, {1, 0});
+        addSideSurf(ui->spinBox_tessellationY->value() - 1,
+                    ui->spinBox_tessellationX->value() - 1 - lonIdx, {-1, 0});
+    }
+    for (int latIdx = 0; latIdx < ui->spinBox_tessellationY->value() - 1; ++latIdx) {
+        addSideSurf(ui->spinBox_tessellationY->value() - 1 - latIdx, 0, {0, -1});
+        addSideSurf(latIdx, ui->spinBox_tessellationX->value() - 1, {0, 1});
+    }
+
+    geom->setInitialBound([]() -> osg::BoundingBox {
+        osg::Vec3 max(osg::WGS_84_RADIUS_POLAR, osg::WGS_84_RADIUS_POLAR, osg::WGS_84_RADIUS_POLAR);
+        return osg::BoundingBox(-max, max);
+    }()); // 必须，否则不显示
+
+    geom->setVertexAttribArray(0, verts);
+    geom->setVertexAttribBinding(0, osg::Geometry::BIND_PER_VERTEX);
+    geom->addPrimitiveSet(
+        new osg::DrawElementsUInt(GL_TRIANGLES, vertIndices.size(), vertIndices.data()));
+}
+#endif

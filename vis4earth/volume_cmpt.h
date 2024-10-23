@@ -102,6 +102,8 @@ class VolumeComponent : public QtOSGReflectableWidget {
     void saveTF();
 
     void sampleTF();
+
+    void updateVoxelPerVolume();
 };
 
 } // namespace VIS4Earth
