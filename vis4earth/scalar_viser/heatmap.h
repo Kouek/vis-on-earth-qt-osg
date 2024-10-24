@@ -5,6 +5,7 @@
 #include <osg/Group>
 #include <osg/ShapeDrawable>
 
+#include <osg/DispatchCompute>
 #include <vis4earth/geographics_cmpt.h>
 #include <vis4earth/osg_util.h>
 #include <vis4earth/qt_osg_reflectable.h>
@@ -38,7 +39,7 @@ class HeatmapRenderer : public QtOSGReflectableWidget {
     osg::ref_ptr<osg::Image> volSliceImg;
 
     osg::ref_ptr<osg::Program> program2D;
-    osg::ref_ptr<osg::Node> dispatchNode;
+    osg::ref_ptr<osg::DispatchCompute> dispatchNode;
     osg::ref_ptr<osg::Texture2D> heatmapTex;
 
     osg::ref_ptr<osg::Uniform> volHeight;

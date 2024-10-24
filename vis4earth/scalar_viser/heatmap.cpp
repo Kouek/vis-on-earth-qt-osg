@@ -169,8 +169,9 @@ void VIS4Earth::HeatmapRenderer::initOSGResource() {
 
 void VIS4Earth::HeatmapRenderer::displayHeatmap2D() {
     auto heatmapImage = heatmapTex->getImage();
-    QImage heatmap2D(heatmapImage->data(), heatmapImage->s(), heatmapImage->t(),
+    QImage heatmap2D(heatmapImage->s(), heatmapImage->t(),
                      QImage::Format_RGBA8888);
+    std::memcpy(heatmap2D.bits(), heatmapImage->data(), heatmapImage->getTotalSizeInBytes());   // 深拷贝，避免冲突访问
     if (heatmap2D.isNull())
         return;
 
@@ -228,6 +229,10 @@ void VIS4Earth::HeatmapRenderer::updateGeometry() {
 }
 
 void VIS4Earth::HeatmapRenderer::updateHeatmap2D() {
+    auto grpNumX = (ui->spinBox_resX->value() + 16 - 1) / 16;
+    auto grpNumY = (ui->spinBox_resY->value() + 16 - 1) / 16;
+    dispatchNode->setComputeGroups(grpNumX, grpNumY, 1);
+
     heatmapTex->getImage()->allocateImage(ui->spinBox_resX->value(), ui->spinBox_resY->value(), 1,
                                           GL_RGBA, GL_UNSIGNED_BYTE);
     heatmapTex->setTextureSize(ui->spinBox_resX->value(), ui->spinBox_resY->value());
