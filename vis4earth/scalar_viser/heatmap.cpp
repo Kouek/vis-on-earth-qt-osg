@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include <osg/BindImageTexture>
+#include <osg/DispatchCompute>
 #include <ui_heatmap.h>
 #include <vis4earth/components_ui_export.h>
 
@@ -12,7 +14,10 @@ VIS4Earth::HeatmapRenderer::HeatmapRenderer(QWidget *parent)
 
     initOSGResource();
 
-    auto onResUpdated = [&]() { updateGeometry(); };
+    auto onResUpdated = [&]() {
+        updateGeometry();
+        updateHeatmap2D();
+    };
     connect(ui->spinBox_resX, &QSpinBox::editingFinished, onResUpdated);
     connect(ui->spinBox_resY, &QSpinBox::editingFinished, onResUpdated);
 
@@ -60,9 +65,10 @@ VIS4Earth::HeatmapRenderer::HeatmapRenderer(QWidget *parent)
             genHeatmapTex);
 
     auto changeTF = [&]() {
-        auto stateSet = geode->getOrCreateStateSet();
-        stateSet->setTextureAttributeAndModes(0, volCmpt.GetTransferFunction(0),
-                                              osg::StateAttribute::ON);
+        geode->getOrCreateStateSet()->setTextureAttributeAndModes(0, volCmpt.GetTransferFunction(0),
+                                                                  osg::StateAttribute::ON);
+        dispatchNode->getOrCreateStateSet()->setTextureAttributeAndModes(
+            2, volCmpt.GetTransferFunction(0), osg::StateAttribute::ON);
     };
     connect(&volCmpt, &VolumeComponent::TransferFunctionChanged, changeTF);
     changeTF();
@@ -81,45 +87,90 @@ void VIS4Earth::HeatmapRenderer::initOSGResource() {
     volSliceTex = new osg::Texture2D();
     volSliceImg = new osg::Image();
     program = new osg::Program();
+    program2D = new osg::Program();
 
-    auto stateSet = geode->getOrCreateStateSet();
-    volHeight = new osg::Uniform("volHeight", 0);
-    stateSet->addUniform(volHeight);
-    for (auto obj : std::array<QtOSGReflectableWidget *, 3>{this, &geoCmpt, &volCmpt})
-        obj->ForEachProperty([&](const std::string &name, const Property &prop) {
-            stateSet->addUniform(prop.GetUniform());
-        });
+    // heatmap2D
     {
-        osg::ref_ptr<osg::Shader> vertShader = osg::Shader::readShaderFile(
-            osg::Shader::VERTEX,
-            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/heatmap_vert.glsl");
-        osg::ref_ptr<osg::Shader> fragShader = osg::Shader::readShaderFile(
-            osg::Shader::FRAGMENT,
-            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/heatmap_frag.glsl");
-        program->addShader(vertShader);
-        program->addShader(fragShader);
+        osg::ref_ptr<osg::Shader> computeShader = osg::Shader::readShaderFile(
+            osg::Shader::COMPUTE,
+            GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/heatmap_2D_cmpt.glsl");
+        program2D->addShader(computeShader);
+
+        auto grpNumX = (ui->spinBox_resX->value() + 16 - 1) / 16;
+        auto grpNumY = (ui->spinBox_resY->value() + 16 - 1) / 16;
+        dispatchNode = new osg::DispatchCompute(grpNumX, grpNumY, 1);
+        dispatchNode->setDataVariance(osg::Object::DYNAMIC);
+
+        auto stateSet = dispatchNode->getOrCreateStateSet();
+        stateSet->setAttributeAndModes(program2D, osg::StateAttribute::ON);
+
+        heatmapTex = new osg::Texture2D();
+        heatmapTex->setResizeNonPowerOfTwoHint(false); // 避免OSG自动调整纹理大小至2的幂次方
+        heatmapTex->setTextureSize(ui->spinBox_resX->value(), ui->spinBox_resY->value());
+        heatmapTex->setInternalFormat(GL_RGBA8);
+        heatmapTex->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST);
+        heatmapTex->setFilter(osg::Texture::MAG_FILTER, osg::Texture::NEAREST);
+        auto heatmapImage = new osg::Image();
+        heatmapImage->allocateImage(ui->spinBox_resX->value(), ui->spinBox_resY->value(), 1,
+                                    GL_RGBA, GL_UNSIGNED_BYTE);
+        heatmapTex->setImage(heatmapImage);
+        auto heatmapBinding = new osg::BindImageTexture(
+            0, heatmapTex, osg::BindImageTexture::WRITE_ONLY, GL_RGBA8UI_EXT);
+        stateSet->setTextureAttributeAndModes(0, heatmapTex);
+        stateSet->setAttribute(heatmapBinding);
+        stateSet->addUniform(new osg::Uniform("imgOutput", 0));
+
+        stateSet->setTextureAttributeAndModes(1, volSliceTex);
+        stateSet->addUniform(new osg::Uniform("volume", 1));
+
+        stateSet->addUniform(new osg::Uniform("transferFunction", 2));
+
+        grp->addChild(dispatchNode);
     }
+
     {
-        auto tfTexUni = new osg::Uniform(osg::Uniform::SAMPLER_1D, "tfTex");
-        tfTexUni->set(0);
-        stateSet->addUniform(tfTexUni);
+        auto stateSet = geode->getOrCreateStateSet();
+        volHeight = new osg::Uniform("volHeight", 0);
+        stateSet->addUniform(volHeight);
+        for (auto obj : std::array<QtOSGReflectableWidget *, 3>{this, &geoCmpt, &volCmpt})
+            obj->ForEachProperty([&](const std::string &name, const Property &prop) {
+                stateSet->addUniform(prop.GetUniform());
+            });
+        {
+            osg::ref_ptr<osg::Shader> vertShader = osg::Shader::readShaderFile(
+                osg::Shader::VERTEX,
+                GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/heatmap_vert.glsl");
+            osg::ref_ptr<osg::Shader> fragShader = osg::Shader::readShaderFile(
+                osg::Shader::FRAGMENT,
+                GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/heatmap_frag.glsl");
+            program->addShader(vertShader);
+            program->addShader(fragShader);
+        }
+        {
+            auto tfTexUni = new osg::Uniform(osg::Uniform::SAMPLER_1D, "tfTex");
+            tfTexUni->set(0);
+            stateSet->addUniform(tfTexUni);
 
-        tfTexUni = new osg::Uniform(osg::Uniform::SAMPLER_2D, "volSliceTex");
-        tfTexUni->set(1);
-        stateSet->addUniform(tfTexUni);
+            tfTexUni = new osg::Uniform(osg::Uniform::SAMPLER_2D, "volSliceTex");
+            tfTexUni->set(1);
+            stateSet->addUniform(tfTexUni);
 
-        stateSet->setTextureAttributeAndModes(1, volSliceTex, osg::StateAttribute::ON);
+            stateSet->setTextureAttributeAndModes(1, volSliceTex, osg::StateAttribute::ON);
+        }
+        stateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
+        stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
+
+        geom->setUseDisplayList(false);
+        geom->setDrawCallback(new Heatmap2DDrawCallback(this));
+        geode->addDrawable(geom);
+        grp->addChild(geode);
     }
-    stateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
-    stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
-
-    geom->setUseDisplayList(false);
-    geom->setDrawCallback(new Heatmap2DDrawCallback(this));
-    geode->addDrawable(geom);
-    grp->addChild(geode);
 }
 
 void VIS4Earth::HeatmapRenderer::displayHeatmap2D() {
+    auto heatmapImage = heatmapTex->getImage();
+    QImage heatmap2D(heatmapImage->data(), heatmapImage->s(), heatmapImage->t(),
+                     QImage::Format_RGBA8888);
     if (heatmap2D.isNull())
         return;
 
@@ -176,13 +227,10 @@ void VIS4Earth::HeatmapRenderer::updateGeometry() {
         new osg::DrawElementsUInt(GL_TRIANGLES, vertIndices.size(), vertIndices.data()));
 }
 
-VIS4Earth::Heatmap2DDrawCallback::Heatmap2DDrawCallback(HeatmapRenderer *heatmapRenderer)
-    : heatmapRenderer(heatmapRenderer) {
-    program = new osg::Program();
-    osg::ref_ptr<osg::Shader> computeShader = osg::Shader::readShaderFile(
-        osg::Shader::COMPUTE,
-        GetDataPathPrefix() + VIS4EARTH_SHADER_PREFIX "scalar_viser/heatmap_2D_cmpt.glsl");
-    program->addShader(computeShader);
+void VIS4Earth::HeatmapRenderer::updateHeatmap2D() {
+    heatmapTex->getImage()->allocateImage(ui->spinBox_resX->value(), ui->spinBox_resY->value(), 1,
+                                          GL_RGBA, GL_UNSIGNED_BYTE);
+    heatmapTex->setTextureSize(ui->spinBox_resX->value(), ui->spinBox_resY->value());
 }
 
 void VIS4Earth::Heatmap2DDrawCallback::drawImplementation(osg::RenderInfo &renderInfo,
@@ -190,63 +238,10 @@ void VIS4Earth::Heatmap2DDrawCallback::drawImplementation(osg::RenderInfo &rende
     drawable->drawImplementation(renderInfo);
 
     auto state = renderInfo.getState();
-    auto ext = renderInfo.getState()->get<osg::GLExtensions>();
 
-    const auto *ui = heatmapRenderer->ui;
-    const auto &volCmpt = heatmapRenderer->volCmpt;
-    auto &heatmap2D = heatmapRenderer->heatmap2D;
-    auto volSliceTex = heatmapRenderer->volSliceTex;
-    auto tf = volCmpt.GetTransferFunction(0);
+    auto heatmapTex = renderer->heatmapTex;
+    heatmapTex->apply(*state);
+    heatmapTex->getImage()->readImageFromCurrentTexture(state->getContextID(), true);
 
-    if (heatmap2D.width() != ui->spinBox_resX->value() ||
-        heatmap2D.height() != ui->spinBox_resY->value()) {
-        heatmap2D =
-            QImage(ui->spinBox_resX->value(), ui->spinBox_resY->value(), QImage::Format_RGBA8888);
-
-        if (heatmapTex != 0)
-            glDeleteTextures(1, &heatmapTex);
-        glGenTextures(1, &heatmapTex);
-        ext->glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, heatmapTex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, heatmap2D.width(), heatmap2D.height(), 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, nullptr);
-    }
-
-    if (!volCmpt.GetVolume(0, 0)) {
-        emit heatmapRenderer->Heatmap2DUpdated();
-        return;
-    }
-
-    program->compileGLObjects(*state);
-    program->apply(*state);
-    auto handle = state->getLastAppliedProgramObject()->getHandle();
-
-    // set uniforms
-    GLuint volumeTex, tfTex;
-    volumeTex = volSliceTex->getTextureObject(state->getContextID())->id();
-    ext->glActiveTexture(GL_TEXTURE0 + 1);
-    glBindTexture(GL_TEXTURE_2D, volumeTex);
-    ext->glUniform1i(ext->glGetUniformLocation(handle, "volume"), 1);
-
-    tfTex = tf->getTextureObject(state->getContextID())->id();
-    ext->glActiveTexture(GL_TEXTURE0 + 2);
-    glBindTexture(GL_TEXTURE_1D, tfTex);
-    ext->glUniform1i(ext->glGetUniformLocation(handle, "transferFunction"), 2);
-
-    // set output image
-    ext->glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, heatmapTex);
-    ext->glBindImageTexture(0, heatmapTex, 0, GL_FALSE, 0, GL_WRITE_ONLY_ARB, GL_RGBA8UI_EXT);
-
-    // compute
-    auto grpNumX = (heatmap2D.width() + 16 - 1) / 16;
-    auto grpNumY = (heatmap2D.height() + 16 - 1) / 16;
-    ext->glDispatchCompute(grpNumX, grpNumY, 1);
-    ext->glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, heatmap2D.bits());
-
-    emit heatmapRenderer->Heatmap2DUpdated();
+    emit renderer->Heatmap2DUpdated();
 }
