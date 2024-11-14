@@ -50,13 +50,9 @@ class VolumeComponent : public QtOSGReflectableWidget {
         return multiTimeVaryingVolSmootheds[volID][timeID];
     }
     const RAWVolumeData &GetVolumeCPU(uint32_t volID, uint32_t timeID) const {
-        if (volID > 1 || timeID >= multiTimeVaryingVolCPUs[volID].size())
-            return {};
         return multiTimeVaryingVolCPUs[volID][timeID];
     }
-    const RAWVolumeData &GetVolumeCPUSmoothed(uint32_t volID, uint32_t timeID) const {
-        if (volID > 1 || timeID >= multiTimeVaryingVolCPUSmootheds[volID].size())
-            return {};
+    const RAWVolumeData &GetVolumeCPUSmoothed(uint32_t volID, uint32_t timeID) const {;
         return multiTimeVaryingVolCPUSmootheds[volID][timeID];
     }
 

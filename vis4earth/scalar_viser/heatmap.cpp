@@ -76,6 +76,10 @@ VIS4Earth::HeatmapRenderer::HeatmapRenderer(QWidget *parent)
     connect(&volCmpt, &VolumeComponent::TransferFunctionChanged, changeTF);
     changeTF();
 
+    connect(ui->comboBox_heightMapMode_int_VIS4EarthReflectable,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &HeatmapRenderer::updateGeometry);
+
     updateGeometry();
 
     debugProperties({this, &volCmpt, &geoCmpt});
@@ -86,6 +90,7 @@ void VIS4Earth::HeatmapRenderer::initOSGResource() {
     geom = new osg::Geometry();
     geode = new osg::Geode();
     verts = new osg::Vec3Array();
+    uvs = new osg::Vec2Array();
     volSliceTex = new osg::Texture2D();
     volSliceImg = new osg::Image();
     program = new osg::Program();
@@ -162,16 +167,32 @@ void VIS4Earth::HeatmapRenderer::updateHeatmap2D() {
 }
 
 void VIS4Earth::HeatmapRenderer::updateGeometry() {
+    EHeightMapMode heightMapMode = static_cast<EHeightMapMode>(
+        ui->comboBox_heightMapMode_int_VIS4EarthReflectable->currentIndex());
+
     verts->clear();
+    uvs->clear();
+    std::array<uint32_t, 2> res{ui->spinBox_resX->value(), ui->spinBox_resY->value()};
+    /* SubID:
+     *   /|\
+     * 5 | 7
+     *  4|6
+     * --+--->
+     *  0|2
+     * 1 | 3
+     */
+    int repeatNum = heightMapMode == EHeightMapMode::Pillar ? 8 : 1;
+    verts->reserve(repeatNum * res[0] * res[1]);
+    uvs->reserve(repeatNum * res[0] * res[1]);
 
-    auto res = ui->spinBox_resX->value() * ui->spinBox_resY->value();
-    verts->reserve(res);
-    for (int latIdx = 0; latIdx <= ui->spinBox_resY->value(); ++latIdx)
-        for (int lonIdx = 0; lonIdx <= ui->spinBox_resX->value(); ++lonIdx) {
-            osg::Vec3 pos(1.f * lonIdx / ui->spinBox_resX->value(),
-                          1.f * latIdx / ui->spinBox_resY->value(), 0.f);
-
-            verts->push_back(pos);
+    for (int latIdx = 0; latIdx <= res[1]; ++latIdx)
+        for (int lonIdx = 0; lonIdx <= res[0]; ++lonIdx) {
+            osg::Vec3 pos(1.f * lonIdx / res[0], 1.f * latIdx / res[1], 0.f);
+            for (int i = 0; i < repeatNum; ++i) {
+                pos.z() = i;
+                verts->push_back(pos);
+                uvs->push_back(osg::Vec2(pos.x(), pos.y()));
+            }
         }
 
     std::vector<GLuint> vertIndices;
@@ -180,16 +201,58 @@ void VIS4Earth::HeatmapRenderer::updateGeometry() {
             vertIndices.emplace_back(triIndices[i]);
     };
     auto addBotSurf = [&](int latIdx, int lonIdx) {
-        std::array<GLuint, 4> quadIndices = {latIdx * ui->spinBox_resX->value() + lonIdx,
-                                             latIdx * ui->spinBox_resX->value() + lonIdx + 1,
-                                             (latIdx + 1) * ui->spinBox_resX->value() + lonIdx + 1,
-                                             (latIdx + 1) * ui->spinBox_resX->value() + lonIdx};
+        switch (heightMapMode) {
+        case EHeightMapMode::None:
+        case EHeightMapMode::Surface: {
+            std::array<GLuint, 4> quadIndices;
+            quadIndices[0] = latIdx * (res[0] + 1) + lonIdx;
+            quadIndices[1] = latIdx * (res[0] + 1) + lonIdx + 1;
+            quadIndices[2] = (latIdx + 1) * (res[0] + 1) + lonIdx + 1;
+            quadIndices[3] = (latIdx + 1) * (res[0] + 1) + lonIdx;
 
-        addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
-        addTri({quadIndices[2], quadIndices[3], quadIndices[0]});
+            addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
+            addTri({quadIndices[2], quadIndices[3], quadIndices[0]});
+        } break;
+        case EHeightMapMode::Pillar: {
+            /*
+             *   4  7
+             * 4 5  6 7
+             * 0 1  2 3
+             *   0  3
+             */
+            std::array<GLuint, 8> cubeIndices;
+            cubeIndices[0] = latIdx * 8 * (res[0] + 1) + 8 * lonIdx + 6;
+            cubeIndices[1] = latIdx * 8 * (res[0] + 1) + 8 * lonIdx + 7;
+            cubeIndices[2] = latIdx * 8 * (res[0] + 1) + 8 * (lonIdx + 1) + 5;
+            cubeIndices[3] = latIdx * 8 * (res[0] + 1) + 8 * (lonIdx + 1) + 4;
+            cubeIndices[4] = (latIdx + 1) * 8 * (res[0] + 1) + 8 * lonIdx + 2;
+            cubeIndices[5] = (latIdx + 1) * 8 * (res[0] + 1) + 8 * lonIdx + 3;
+            cubeIndices[6] = (latIdx + 1) * 8 * (res[0] + 1) + 8 * (lonIdx + 1) + 1;
+            cubeIndices[7] = (latIdx + 1) * 8 * (res[0] + 1) + 8 * (lonIdx + 1) + 0;
+
+            (*uvs)[cubeIndices[2]] = (*uvs)[cubeIndices[6]] = (*uvs)[cubeIndices[5]] =
+                (*uvs)[cubeIndices[1]];
+
+            addTri({cubeIndices[0], cubeIndices[1], cubeIndices[5]});
+            addTri({cubeIndices[5], cubeIndices[4], cubeIndices[0]});
+
+            addTri({cubeIndices[1], cubeIndices[2], cubeIndices[6]});
+            addTri({cubeIndices[6], cubeIndices[5], cubeIndices[1]});
+
+            addTri({cubeIndices[2], cubeIndices[3], cubeIndices[7]});
+            addTri({cubeIndices[7], cubeIndices[6], cubeIndices[2]});
+
+            addTri({cubeIndices[0], cubeIndices[3], cubeIndices[2]});
+            addTri({cubeIndices[2], cubeIndices[1], cubeIndices[0]});
+
+            addTri({cubeIndices[5], cubeIndices[6], cubeIndices[7]});
+            addTri({cubeIndices[7], cubeIndices[4], cubeIndices[5]});
+        } break;
+        }
     };
-    for (int latIdx = 0; latIdx < ui->spinBox_resY->value(); ++latIdx)
-        for (int lonIdx = 0; lonIdx < ui->spinBox_resX->value(); ++lonIdx)
+
+    for (int latIdx = 0; latIdx < res[1]; ++latIdx)
+        for (int lonIdx = 0; lonIdx < res[0]; ++lonIdx)
             addBotSurf(latIdx, lonIdx);
 
     geom->setInitialBound([]() -> osg::BoundingBox {
@@ -198,6 +261,7 @@ void VIS4Earth::HeatmapRenderer::updateGeometry() {
     }()); // 必须，否则不显示
 
     geom->setVertexArray(verts);
+    geom->setTexCoordArray(0, uvs);
     geom->getPrimitiveSetList().clear();
     geom->addPrimitiveSet(
         new osg::DrawElementsUInt(GL_TRIANGLES, vertIndices.size(), vertIndices.data()));

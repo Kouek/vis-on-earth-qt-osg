@@ -59,25 +59,8 @@
           <string>绘制</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>当前高度</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QSpinBox" name="spinBox_resY">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>4096</number>
-            </property>
-            <property name="value">
-             <number>640</number>
-            </property>
-           </widget>
+          <item row="0" column="1" colspan="2">
+           <widget class="QSpinBox" name="spinBox_height_int_VIS4EarthReflectable"/>
           </item>
           <item row="3" column="1" colspan="2">
            <widget class="QComboBox" name="comboBox_texFilterMode">
@@ -106,21 +89,64 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>4096</number>
+             <number>400</number>
             </property>
             <property name="value">
-             <number>640</number>
+             <number>320</number>
             </property>
            </widget>
           </item>
-          <item row="0" column="1" colspan="2">
-           <widget class="QSpinBox" name="spinBox_height_int_VIS4EarthReflectable"/>
+          <item row="2" column="2">
+           <widget class="QSpinBox" name="spinBox_resY">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>400</number>
+            </property>
+            <property name="value">
+             <number>320</number>
+            </property>
+           </widget>
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>纹理过滤方式</string>
             </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>当前高度</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>高度图模式</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QComboBox" name="comboBox_heightMapMode_int_VIS4EarthReflectable">
+            <item>
+             <property name="text">
+              <string>无高度图</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>变高曲面</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>变高柱体</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>

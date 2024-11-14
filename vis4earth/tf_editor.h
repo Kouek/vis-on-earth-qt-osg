@@ -47,7 +47,7 @@ class TransferFunctionChartView : public QtCharts::QChartView {
     }
     void SetFromGradientPreset(QGradient::Preset preset, float slopeAlpha = .33f) {
         QGradient gradient(preset);
-        auto &stops = gradient.stops();
+        auto stops = gradient.stops();
         TransferFunctionData newTFDat;
 
         int i = 0;
@@ -283,7 +283,7 @@ class TransferFunctionChartView : public QtCharts::QChartView {
             auto itr = tfScatters.find(scalar);
             auto scatter = [&]() {
                 if (itr == tfScatters.end()) {
-                    auto &itr_inserted =
+                    auto itr_inserted =
                         tfScatters.emplace(std::make_pair(scalar, new QtCharts::QScatterSeries()));
                     auto scatter = std::get<0>(itr_inserted)->second;
                     chart()->addSeries(scatter);

@@ -76,8 +76,8 @@ void VIS4Earth::VolumeComponent::loadRAWVolume() {
             volCPUs.emplace_back(volDat.result.dat);
     }
 
-    smoothVolume();
     updateVoxelPerVolume();
+    smoothVolume();
 }
 
 void VIS4Earth::VolumeComponent::smoothVolume() {

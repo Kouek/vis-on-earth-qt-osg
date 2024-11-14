@@ -21,6 +21,7 @@ class HeatmapRenderer : public QtOSGReflectableWidget {
 
   public:
     enum class ETextureFilterMode { Nearest, Linear };
+    enum class EHeightMapMode { None, Surface, Pillar };
 
     HeatmapRenderer(QWidget *parent = nullptr);
 
@@ -32,10 +33,12 @@ class HeatmapRenderer : public QtOSGReflectableWidget {
     osg::ref_ptr<osg::Geode> geode;
     osg::ref_ptr<osg::Program> program;
     osg::ref_ptr<osg::Vec3Array> verts;
+    osg::ref_ptr<osg::Vec2Array> uvs;
     osg::ref_ptr<osg::Texture2D> volSliceTex;
     osg::ref_ptr<osg::Image> volSliceImg;
 
     osg::ref_ptr<osg::Uniform> volHeight;
+    osg::ref_ptr<osg::Uniform> heightMapMode;
 
     Ui::HeatmapRenderer *ui;
     GeographicsComponent geoCmpt;

@@ -125,7 +125,7 @@ float computeAO(vec3 samplePos, vec3 dSamplePos, sampler3D volTex, sampler1D tfT
     float curr = texture(tfTex, texture(volTex, samplePos).r).a;
     float diff;
     float AO = 1.f;
-    
+
     diff = texture(tfTex, texture(volTex, samplePos + vec3(dSamplePos.x, 0, 0)).r).a - curr;
     AO -= diff;
     diff = texture(tfTex, texture(volTex, samplePos - vec3(dSamplePos.x, 0, 0)).r).a - curr;
@@ -281,8 +281,8 @@ void main() {
         ++stepCnt;
     } while (tAcc < tExit && stepCnt <= maxStepCnt);
 
-    float AO = 1.f; 
-    if (useAO &&  firstValidSamplePos.x != -1.f)
+    float AO = 1.f;
+    if (useAO && firstValidSamplePos.x != -1.f)
         AO = computeAO(firstValidSamplePos, dSamplePos0, volTex0, tfTex0);
     color.rgb *= AO;
 

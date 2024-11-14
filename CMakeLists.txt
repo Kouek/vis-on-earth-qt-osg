@@ -4,8 +4,10 @@ project("vis-on-earth-osg-qt" LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/execution-charset:utf-8>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/permissive->")
 
 # <dep: Qt>
 set(CMAKE_AUTOMOC ON)
