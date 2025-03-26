@@ -169,8 +169,8 @@ void main() {
     Hit hit = intersectSphere(d, heightMax);
     if (hit.isHit == 0)
         discard;
+
     float tEntry = hit.tEntry;
-    vec3 outerX = eyePos + tEntry * d;
 
     float tExit = hit.tExit;
     hit = intersectSphere(d, heightMin);
@@ -212,9 +212,13 @@ void main() {
     float prevScalar0 = -1.f;
     float prevScalar1 = -1.f;
     int stepCnt = 0;
-    vec3 pos = outerX;
+    vec3 pos = vertex;
     vec3 firstValidSamplePos = vec3(-1.f);
     tExit -= tEntry;
+
+    /*fragColor = vec4(vec3(tExit / heightMax), 1.f);
+    return;*/
+
     do {
         float r = sqrt(pos.x * pos.x + pos.y * pos.y);
         float lat = atan(pos.z / r);
@@ -280,6 +284,9 @@ void main() {
         tAcc += step;
         ++stepCnt;
     } while (tAcc < tExit && stepCnt <= maxStepCnt);
+
+    /*fragColor = vec4(vec3(1.f * stepCnt / maxStepCnt), 1.f);
+    return;*/
 
     float AO = 1.f;
     if (useAO && firstValidSamplePos.x != -1.f)

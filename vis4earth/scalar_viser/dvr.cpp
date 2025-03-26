@@ -1,5 +1,7 @@
 ﻿#include <vis4earth/scalar_viser/dvr.h>
 
+#include <osg/PolygonMode>
+
 #include <ui_dvr.h>
 #include <vis4earth/components_ui_export.h>
 
@@ -240,6 +242,13 @@ void VIS4Earth::DirectVolumeRenderer::initOSGResource() {
 
     stateSet->setAttributeAndModes(program, osg::StateAttribute::ON);
     stateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
+    // Draw in Wireframe
+    /*{
+        osg::ref_ptr<osg::PolygonMode> polyMode(new osg::PolygonMode());
+        polyMode->setMode(osg::PolygonMode::BACK, osg::PolygonMode::LINE);
+        stateSet->setAttribute(polyMode);
+    }*/
+
     stateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 
 #ifdef VIS4EARTH_USE_OLD_RENDERER
@@ -262,7 +271,7 @@ void VIS4Earth::DirectVolumeRenderer::updateGeometry() {
     verts->clear();
 
     auto res = ui->spinBox_tessellationX->value() * ui->spinBox_tessellationY->value();
-    verts->reserve(res);
+    verts->reserve(2 * res);
     uint32_t btmSurfVertStart;
     auto genSurfVertices = [&](bool isTop) {
         for (int latIdx = 0; latIdx < ui->spinBox_tessellationY->value(); ++latIdx)
@@ -287,17 +296,22 @@ void VIS4Earth::DirectVolumeRenderer::updateGeometry() {
         auto start = isTop ? 0 : btmSurfVertStart;
         std::array<GLuint, 4> quadIndices = {
             start + latIdx * ui->spinBox_tessellationX->value() + lonIdx,
-            start + latIdx * ui->spinBox_tessellationX->value() + lonIdx + (isTop ? 1 : -1),
-            start + (latIdx + 1) * ui->spinBox_tessellationX->value() + lonIdx + (isTop ? 1 : -1),
+            start + latIdx * ui->spinBox_tessellationX->value() + lonIdx + 1,
+            start + (latIdx + 1) * ui->spinBox_tessellationX->value() + lonIdx + 1,
             start + (latIdx + 1) * ui->spinBox_tessellationX->value() + lonIdx};
 
-        addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
-        addTri({quadIndices[0], quadIndices[2], quadIndices[3]});
+        if (isTop) {
+            addTri({quadIndices[2], quadIndices[1], quadIndices[0]});
+            addTri({quadIndices[3], quadIndices[2], quadIndices[0]});
+        } else {
+            addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
+            addTri({quadIndices[0], quadIndices[2], quadIndices[3]});
+        }
     };
     for (int latIdx = 0; latIdx < ui->spinBox_tessellationY->value() - 1; ++latIdx)
         for (int lonIdx = 0; lonIdx < ui->spinBox_tessellationX->value() - 1; ++lonIdx) {
             addTopBotSurf(true, latIdx, lonIdx);
-            addTopBotSurf(false, latIdx, ui->spinBox_tessellationX->value() - 1 - lonIdx);
+            addTopBotSurf(false, latIdx, lonIdx);
         }
 
     auto addSideSurf = [&](int latIdx, int lonIdx, const osg::Vec2i &dir) {
@@ -307,8 +321,8 @@ void VIS4Earth::DirectVolumeRenderer::updateGeometry() {
                 dir.x(),
             (latIdx + dir.y()) * ui->spinBox_tessellationX->value() + lonIdx + dir.x(),
             latIdx * ui->spinBox_tessellationX->value() + lonIdx};
-        addTri({quadIndices[0], quadIndices[1], quadIndices[2]});
-        addTri({quadIndices[0], quadIndices[2], quadIndices[3]});
+        addTri({quadIndices[2], quadIndices[1], quadIndices[0]});
+        addTri({quadIndices[3], quadIndices[2], quadIndices[0]});
     };
     for (int lonIdx = 0; lonIdx < ui->spinBox_tessellationX->value() - 1; ++lonIdx) {
         addSideSurf(0, lonIdx, {1, 0});
@@ -327,6 +341,8 @@ void VIS4Earth::DirectVolumeRenderer::updateGeometry() {
 
     geom->setVertexAttribArray(0, verts);
     geom->setVertexAttribBinding(0, osg::Geometry::BIND_PER_VERTEX);
+    if (geom->getNumPrimitiveSets() > 0)
+        geom->removePrimitiveSet(0);
     geom->addPrimitiveSet(
         new osg::DrawElementsUInt(GL_TRIANGLES, vertIndices.size(), vertIndices.data()));
 }
