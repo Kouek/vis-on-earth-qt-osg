@@ -165,17 +165,30 @@ Hit intersectSlice(vec3 e2pDir, SliceOnSphere slice) {
 }
 
 void main() {
-    vec3 d = normalize(vertex - eyePos);
+    vec3 translate = vertex - eyePos;
+    vec3 d = normalize(translate);
+
+    float tEntry = -1.f, tExit = -1.f;
     Hit hit = intersectSphere(d, heightMax);
-    if (hit.isHit == 0)
+    if (hit.isHit != 0) {
+        tEntry = hit.tEntry;
+        tExit = hit.tExit;
+    }
+
+    hit = intersectSphere(d, heightMin);
+    if (hit.isHit != 0) {
+        if (tEntry >= 0.f) {
+            tExit = min(tExit, hit.tExit);
+        } else {
+            tEntry = hit.tEntry;
+            tExit = hit.tExit;
+        }
+    }
+
+    if (tEntry < 0.f)
         discard;
 
-    float tEntry = hit.tEntry;
-
-    float tExit = hit.tExit;
-    hit = intersectSphere(d, heightMin);
-    if (hit.isHit != 0)
-        tExit = hit.tEntry;
+    tEntry = max(tEntry, dot(d, translate));
 
     float hDlt = heightMax - heightMin;
     float latDlt = latitudeMax - latitudeMin;
