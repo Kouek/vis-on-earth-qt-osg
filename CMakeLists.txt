@@ -9,6 +9,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/execution-charset:utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/permissive->")
 
+# <dep:OpenCL>
+find_package("OpenCL" REQUIRED)
+# <\dep:OpenCL>
+
 # <dep: Qt>
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -82,6 +86,7 @@ target_link_directories(
 target_link_libraries(
 	"vis4earth"
 	PUBLIC
+	"OpenCL::OpenCL"
 	"Qt5::Core"
 	"Qt5::Widgets"
 	"Qt5::Gui"

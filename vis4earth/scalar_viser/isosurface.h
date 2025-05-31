@@ -4,6 +4,8 @@
 #include <set>
 #include <vector>
 
+#include <CL/cl.h>
+
 #include <osg/CoordinateSystemNode>
 #include <osg/CullFace>
 #include <osg/Group>
@@ -15,6 +17,8 @@
 #include <vis4earth/volume_cmpt.h>
 
 #include <vis4earth/scalar_viser/marching_cube_table.h>
+
+//#define VIS4EARTH_USE_PARALLEL_MARCHING_CUBE
 
 namespace Ui {
 class IsosurfaceRenderer;
@@ -28,7 +32,13 @@ class IsosurfaceRenderer : public QtOSGReflectableWidget {
   public:
     enum class EMeshSmoothType { None, Laplacian, Curvature };
 
+#ifdef VIS4EARTH_USE_PARALLEL_MARCHING_CUBE
+    static constexpr size_t ThreadPerBlock1D[1] = {256};
+    static constexpr size_t ThreadPerBlock3D[3] = {16, 16, 1};
+#endif
+
     IsosurfaceRenderer(QWidget *parent = nullptr);
+    ~IsosurfaceRenderer();
 
     osg::ref_ptr<osg::Group> GetGroup() const { return grp; }
 
@@ -56,7 +66,27 @@ class IsosurfaceRenderer : public QtOSGReflectableWidget {
     std::vector<GLuint> vertIndices;
     std::array<std::set<std::array<GLuint, 2>>, 2> multiEdges;
 
+#ifdef VIS4EARTH_USE_PARALLEL_MARCHING_CUBE
+    cl_platform_id clPlatformID;
+    cl_device_id clDeviceID;
+    cl_context clContext;
+    cl_command_queue clCmdQue;
+
+    cl_program clProgComputeCornerState;
+    cl_kernel clKernelComputeCornerState;
+
+    cl_program clProgComputeVertices;
+    cl_kernel clKernelComputeVertices;
+
+    cl_program clProgComputeNormals;
+    cl_kernel clKernelComputeNormals;
+#endif
+
     void initOSGResource();
+#ifdef VIS4EARTH_USE_PARALLEL_MARCHING_CUBE
+    void initOCLResource();
+    void releaseOCLResource();
+#endif
 
     void marchingCube(uint32_t volID);
 

@@ -448,13 +448,15 @@ class TransferFunctionEditor : public QWidget {
         auto metaEnum = QMetaEnum::fromType<QGradient::Preset>();
         QPixmap pixmap(PixmapSz[0], PixmapSz[1]);
         QPainter painter(&pixmap);
-        QLinearGradient lnGrad(0., 0., 1., 0.);
-        lnGrad.setCoordinateMode(QGradient::CoordinateMode::ObjectBoundingMode);
+
         for (int i = 1; i <= metaEnum.keyCount(); ++i) {
             QGradient gradient(static_cast<QGradient::Preset>(i));
+
+            QLinearGradient lnGrad(0., 0., 1., 0.);
+            lnGrad.setCoordinateMode(QGradient::CoordinateMode::ObjectBoundingMode);
             int j = 0;
             for (auto &stop : gradient.stops()) {
-                lnGrad.setColorAt(j / (gradient.stops().size() - 1), stop.second);
+                lnGrad.setColorAt(1. * j / (gradient.stops().size() - 1), stop.second);
                 ++j;
             }
 

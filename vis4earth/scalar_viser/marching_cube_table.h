@@ -5,7 +5,7 @@
 
 namespace VIS4Earth {
 #define X 255
-static const uint32_t TriangleTable[256][16] = {
+static const uint8_t TriangleTable[256][16] = {
     {X, X, X, X, X, X, X, X, X, X, X, X, X, X, X, X},
     {0, 8, 3, X, X, X, X, X, X, X, X, X, X, X, X, X},
     {0, 1, 9, X, X, X, X, X, X, X, X, X, X, X, X, X},
@@ -264,7 +264,7 @@ static const uint32_t TriangleTable[256][16] = {
     {X, X, X, X, X, X, X, X, X, X, X, X, X, X, X, X}};
 #undef X
 
-static const uint32_t VertNumTable[256] = {
+static const uint8_t VertNumTable[256] = {
     0,  3,  3,  6,  3,  6,  6,  9,  3, 6,  6,  9,  6,  9,  9,  6,  3,  6,  6,  9,  6,  9,  9,  12,
     6,  9,  9,  12, 9,  12, 12, 9,  3, 6,  6,  9,  6,  9,  9,  12, 6,  9,  9,  12, 9,  12, 12, 9,
     6,  9,  9,  6,  9,  12, 12, 9,  9, 12, 12, 9,  12, 15, 15, 6,  3,  6,  6,  9,  6,  9,  9,  12,
